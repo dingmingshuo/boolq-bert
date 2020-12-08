@@ -52,19 +52,3 @@ def get_dev_data(data_path, dev_data_file, tokenizer, max_seq_length):
     dev_features = (input_ids_dev, attention_masks_dev, answers_dev)
 
     return dev_features
-
-
-def get_test_data(data_path, test_data_file, tokenizer, max_seq_length):
-    test_data_file = os.path.join(data_path, test_data_file)
-    test_data_df = pd.read_json(test_data_file, lines=True, orient='records')
-    passages_test = test_data_df.passage.values
-    questions_test = test_data_df.question.values
-    answers_test = test_data_df.answer.values.astype(int)
-
-    print("Importing test datas from %s:" % test_data_file)
-    input_ids_test, attention_masks_test = encode_data(
-        tokenizer, questions_test, passages_test, max_seq_length)
-
-    test_features = (input_ids_test, attention_masks_test, answers_test)
-
-    return test_features
