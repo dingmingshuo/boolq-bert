@@ -14,9 +14,9 @@ class BoolQDataset(Dataset):
         self.answers = answers
 
     def __getitem__(self, index):
-        ids = self.input_ids[index]
-        mask = self.attention_masks[index]
-        answer = self.answers[index]
+        ids = torch.tensor(self.input_ids[index], dtype=torch.long)
+        mask = torch.tensor(self.attention_masks[index], dtype=torch.long)
+        answer = torch.tensor(self.answers[index], dtype=torch.long)
         return ids, mask, answer
 
     def __len__(self):
@@ -29,7 +29,7 @@ def encode_data(tokenizer, questions, passages, max_length):
 
     for question, passage in tqdm(zip(questions, passages)):
         encoded_data = tokenizer.encode_plus(
-            question, passage, max_length=max_length, padding=True, pad_to_max_length=True, truncation_strategy="longest_first", truncation=True)
+            question, passage, truncation=True, padding='max_length', max_length=max_length)
         encoded_pair = encoded_data["input_ids"]
         attention_mask = encoded_data["attention_mask"]
 
@@ -64,7 +64,5 @@ def get_dev_data(data_path, dev_data_file, tokenizer, max_seq_length):
     print("Importing dev datas from %s:" % dev_data_file)
     input_ids_dev, attention_masks_dev = encode_data(
         tokenizer, questions_dev, passages_dev, max_seq_length)
-
-    dev_features = (input_ids_dev, attention_masks_dev, answers_dev)
 
     return BoolQDataset(input_ids_dev, attention_masks_dev, answers_dev)
