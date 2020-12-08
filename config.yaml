@@ -1,23 +1,22 @@
-model: bert-base-uncased
+model: albert-base-v2
 
 preprocess:
   max_sent_len: 256
 
 data:
   data_path: /home/mingshuo/Dataset/BoolQ
-  train_data: train.jsonl
-  dev_data: dev.jsonl
+  train_data: train_small.jsonl
+  dev_data: dev_small.jsonl
   test_data: test.jsonl
 
 train:
   output_dir: ./result
-  logging_dir: ./log
+  output_filename_prefix: albert-base-v2
+  logging_step: 100
+  batch_size: 2
   epochs: 6
-  logging_steps: 1000
-  batch_size: 16
-  weight_decay: 0.001
   lr: 0.00003
+  weight_decay: 0.001
 
-eval:
-  model_path: ./result/model
-  batch_size: 16
+dev:
+  batch_size: 2
