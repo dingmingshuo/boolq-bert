@@ -1,0 +1,23 @@
+model: bert-base-uncased
+
+preprocess:
+  max_sent_len: 256
+
+data:
+  data_path: /home/mingshuo/Dataset/BoolQ
+  train_data: train.jsonl
+  dev_data: dev.jsonl
+  test_data: test.jsonl
+
+train:
+  output_dir: ./result
+  logging_dir: ./log
+  epochs: 6
+  logging_steps: 1000
+  batch_size: 16
+  weight_decay: 0.001
+  lr: 0.00003
+
+eval:
+  model_path: ./result/model
+  batch_size: 16
