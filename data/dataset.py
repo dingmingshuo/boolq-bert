@@ -3,6 +3,24 @@ import os
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import torch
+from torch.utils.data import Dataset
+
+
+class BoolQDataset(Dataset):
+    def __init__(self, input_ids, attention_masks, answers):
+        self.input_ids = input_ids
+        self.attention_masks = attention_masks
+        self.answers = answers
+
+    def __getitem__(self, index):
+        ids = self.input_ids[index]
+        mask = self.attention_masks[index]
+        answer = self.answers[index]
+        return ids, mask, answer
+
+    def __len__(self):
+        return len(self.answers)
 
 
 def encode_data(tokenizer, questions, passages, max_length):
@@ -33,9 +51,7 @@ def get_train_data(data_path, train_data_file, tokenizer, max_seq_length):
     input_ids_train, attention_masks_train = encode_data(
         tokenizer, questions_train, passages_train, max_seq_length)
 
-    train_features = (input_ids_train, attention_masks_train, answers_train)
-
-    return train_features
+    return BoolQDataset(input_ids_train, attention_masks_train, answers_train)
 
 
 def get_dev_data(data_path, dev_data_file, tokenizer, max_seq_length):
@@ -51,4 +67,4 @@ def get_dev_data(data_path, dev_data_file, tokenizer, max_seq_length):
 
     dev_features = (input_ids_dev, attention_masks_dev, answers_dev)
 
-    return dev_features
+    return BoolQDataset(input_ids_dev, attention_masks_dev, answers_dev)
