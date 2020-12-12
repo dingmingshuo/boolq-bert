@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 from tqdm import tqdm
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 
 config = yaml_load("./config.yaml")
 model_name = config.get("model")
@@ -42,6 +42,7 @@ dev_loader = DataLoader(
 )
 
 logging_step = train_cfg["logging_step"]
+b = train_cfg["b"]
 
 for epoch in range(train_cfg["epochs"]):
     total_loss = 0
@@ -56,7 +57,7 @@ for epoch in range(train_cfg["epochs"]):
             labels = labels.to(device)
             outputs = model(input_ids, attention_mask=attention_mask,
                             labels=labels, return_dict=True)
-            loss = outputs.loss
+            loss = (outputs.loss - b).abs() + b
             loss.backward()
             optimizer.step()
             total_loss += loss.cpu().item()

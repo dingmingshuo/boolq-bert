@@ -1,22 +1,23 @@
-model: albert-base-v2
+model: bert-base-uncased
 
 preprocess:
-  max_sent_len: 256
+  max_sent_len: 512
 
 data:
-  data_path: /home/mingshuo/Dataset/BoolQ
-  train_data: train_small.jsonl
+  data_path: /home/amax101/hice/dms/boolq-bert/BoolQ
+  train_data: train.jsonl
   dev_data: dev_small.jsonl
   test_data: test.jsonl
 
 train:
   output_dir: ./result
-  output_filename_prefix: albert-base-v2
-  logging_step: 100
-  batch_size: 2
-  epochs: 6
+  output_filename_prefix: bert-base-uncased
+  logging_step: 200
+  batch_size: 12
+  epochs: 10
   lr: 0.00003
-  weight_decay: 0.001
+  weight_decay: 0.01
+  b: 0.3
 
 dev:
-  batch_size: 2
+  batch_size: 8
