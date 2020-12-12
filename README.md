@@ -16,3 +16,6 @@ If you change the environment, or use some packages which are not mentioned in `
 ```
 pipreqs . --force
 ```
+
+## Trained Params
+- Of commit [66b11cb](https://github.com/dingmingshuo/boolq-bert/commit/66b11cb6339e82f282c97f1e94365d25060d143e): https://disk.pku.edu.cn:443/link/794ED7C429AD8B92048225E2E1EFC28F
