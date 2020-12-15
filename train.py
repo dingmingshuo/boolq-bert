@@ -7,6 +7,7 @@ import os
 
 import torch
 from torch.utils.data import DataLoader
+from torch.nn.functional import softmax
 from transformers import AutoTokenizer
 from tqdm import tqdm
 
@@ -48,6 +49,7 @@ for epoch in range(train_cfg["epochs"]):
     total_loss = 0
     step_now = 0
     dev_loss = 0
+    dev_acc = 0
     with tqdm(train_loader) as tl:
         for input_ids, attention_mask, labels in tl:
             step_now += 1
@@ -61,10 +63,11 @@ for epoch in range(train_cfg["epochs"]):
             loss.backward()
             optimizer.step()
             total_loss += loss.cpu().item()
-
+            
             # Evaluate
             if step_now % logging_step == 0:
                 dev_loss = 0
+                dev_acc = 0
                 model.eval()
                 with torch.no_grad():
                     for input_ids, attention_mask, labels in dev_loader:
@@ -75,13 +78,18 @@ for epoch in range(train_cfg["epochs"]):
                                         labels=labels, return_dict=True)
                         loss = outputs.loss
                         dev_loss += loss.cpu().item()
+                        results = softmax(outputs.logits, dim=1)
+                        pred = torch.argmax(results, dim=1)
+                        dev_acc += torch.eq(pred, labels).sum().float().item()
+
                 model.train()
 
             # Load loggings
             tl.set_postfix(loss=loss.cpu().item(),
                            avg_loss=total_loss/step_now,
-                           dev_loss=dev_loss/len(dev_loader))
-
+                           dev_loss=dev_loss/len(dev_loader),
+                           dev_acc=dev_acc/len(dev_loader))
+           
     # Save model
     if not os.path.isdir(train_cfg["output_dir"]):
         os.mkdir(train_cfg["output_dir"])

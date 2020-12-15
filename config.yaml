@@ -4,9 +4,9 @@ preprocess:
   max_sent_len: 512
 
 data:
-  data_path: /home/amax101/hice/dms/boolq-bert/BoolQ
+  data_path: F:\boolq\data
   train_data: train.jsonl
-  dev_data: dev_small.jsonl
+  dev_data: dev.jsonl
   test_data: test.jsonl
 
 train:
@@ -21,3 +21,7 @@ train:
 
 dev:
   batch_size: 8
+  model_dir: ./result
+  model_filename: bert-base-uncased_epoch=10
+  result_dir: ./result
+  result_filename: result.txt
