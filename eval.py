@@ -19,20 +19,22 @@ model_name = config.get("model")
 preprocess_cfg = config.get("preprocess", {})
 data_cfg = config.get("data", {})
 dev_cfg = config.get("dev", {})
+eval_cfg = config.get("eval", {})
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 dev_data = get_dev_data(
     data_cfg['data_path'], data_cfg['dev_data'], tokenizer, preprocess_cfg['max_sent_len'])
-
-model_path = os.path.join(dev_cfg['model_dir'], dev_cfg['model_filename'])
-model = get_model(model_path).to(device)
-model.eval()
 
 dev_loader = DataLoader(
     dev_data,
     batch_size=dev_cfg["batch_size"],
     shuffle=True
 )
+
+model = get_model(model_name).to(device)
+checkpoint = torch.load(eval_cfg['model_path'])
+model.load_state_dict(checkpoint)
+model.eval()
 
 # Evaluate
 total_loss = 0
@@ -69,8 +71,8 @@ print("f1 score: ", f1)
 print("roc_auc score: ", roc_auc)
 
 # Save results
-if not os.path.isdir(dev_cfg["result_dir"]):
-    os.mkdir(dev_cfg["result_dir"])
+if not os.path.isdir(eval_cfg["result_dir"]):
+    os.mkdir(eval_cfg["result_dir"])
 output_path = os.path.join(
-    dev_cfg["result_dir"], dev_cfg["result_filename"])
+    eval_cfg["result_dir"], eval_cfg["result_filename"])
 np.savetxt(output_path, pred, fmt = "%d", delimiter = "\n")

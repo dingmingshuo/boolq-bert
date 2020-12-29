@@ -21,7 +21,8 @@ train:
 
 dev:
   batch_size: 8
-  model_dir: ./result
-  model_filename: bert-base-uncased_epoch=10
+
+eval:
+  model_path: ./result/bert-base-uncased_epoch=10
   result_dir: ./result
   result_filename: result.txt
