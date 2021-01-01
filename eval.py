@@ -12,7 +12,9 @@ from transformers import AutoTokenizer
 
 from sklearn.metrics import recall_score, accuracy_score, precision_score, f1_score, roc_auc_score
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+from tqdm import tqdm
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 config = yaml_load("./config.yaml")
 model_name = config.get("model")
@@ -28,11 +30,11 @@ dev_data = get_dev_data(
 dev_loader = DataLoader(
     dev_data,
     batch_size=dev_cfg["batch_size"],
-    shuffle=True
+    shuffle=False
 )
 
 model = get_model(model_name).to(device)
-checkpoint = torch.load(eval_cfg['model_path'])
+checkpoint = torch.load(eval_cfg['model_path'], map_location=device)
 model.load_state_dict(checkpoint)
 model.eval()
 
@@ -43,7 +45,7 @@ answer = np.array([])
 prob = np.array([])
 
 with torch.no_grad():
-    for input_ids, attention_mask, labels in dev_loader:
+    for input_ids, attention_mask, labels in tqdm(dev_loader):
         input_ids = input_ids.to(device)
         attention_mask = attention_mask.to(device)
         labels = labels.to(device)
@@ -53,9 +55,9 @@ with torch.no_grad():
         total_loss += loss.cpu().item()
         results = softmax(outputs.logits, dim=1)
         now_pred = torch.argmax(results, dim=1)
-        pred = np.concatenate((pred, now_pred.numpy()), axis=0)
-        answer = np.concatenate((answer, labels.numpy()), axis=0)
-        prob = np.concatenate((prob, results.numpy()[:,1]), axis=0)
+        pred = np.concatenate((pred, now_pred.cpu().numpy()), axis=0)
+        answer = np.concatenate((answer, labels.cpu().numpy()), axis=0)
+        prob = np.concatenate((prob, results.cpu().numpy()[:,1]), axis=0)
 
 # Calculate metric scores
 accuracy = accuracy_score(answer, pred)

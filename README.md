@@ -18,4 +18,4 @@ pipreqs . --force
 ```
 
 ## Trained Params
-- Of commit [66b11cb](https://github.com/dingmingshuo/boolq-bert/commit/66b11cb6339e82f282c97f1e94365d25060d143e): https://disk.pku.edu.cn:443/link/794ED7C429AD8B92048225E2E1EFC28F
+- Of commit [66b11cb](https://github.com/dingmingshuo/boolq-bert/commit/66b11cb6339e82f282c97f1e94365d25060d143e): https://disk.pku.edu.cn:443/link/DAC6F75EC7D8010CDB1013EF601B7281
