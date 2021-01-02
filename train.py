@@ -4,6 +4,7 @@ from model.model import get_model
 from model.optimizer import get_AdamW
 
 import os
+import random
 
 import torch
 from torch.utils.data import DataLoader
@@ -11,8 +12,8 @@ from torch.nn.functional import softmax
 from transformers import AutoTokenizer
 from tqdm import tqdm
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.cuda.empty_cache()
 config = yaml_load("./config.yaml")
 model_name = config.get("model")
 preprocess_cfg = config.get("preprocess", {})
@@ -40,18 +41,28 @@ def collate_fn(data):
         words_da,mask_da = eda(preprocess_cfg['max_sent_len'],words,mask,
                                 sr_rate=eda_cfg['sr_rate'],
                                 rd_rate=eda_cfg['rd_rate'],
-                                sw_rate=eda_cfg['sw_rate'],
+                                rs_rate=eda_cfg['rs_rate'],
                                 ri_rate=eda_cfg['ri_rate']
                                 )
-        for tokens in words_da:
-            inputs_ids.append(tokenizer.convert_tokens_to_ids(tokens))
-        masks.extend(mask_da)
-        answers.extend([answer for i in range(len(words_da))])
+        idx = random.randint(0,4)
+        inputs_ids.append(tokenizer.convert_tokens_to_ids(words_da[idx]))
+        masks.append(mask_da[idx])
+        answers.append(answer)
     
-    inputs_ids = torch.tensor(input_ids,dtype=torch.long)
+    inputs_ids = torch.tensor(inputs_ids,dtype=torch.long)
     masks = torch.tensor(masks,dtype=torch.long)
     answers = torch.tensor(answers,dtype=torch.long)
     
+    return inputs_ids,masks,answers
+
+def easy_collate(data):
+    inputs_ids = []
+    masks = []
+    answers = []
+    for (ids, mask, answer) in data:
+        inputs_ids.append(ids)
+        masks.append(mask)
+        answers.append(answer)
     return inputs_ids,masks,answers
 
 train_loader = DataLoader(
@@ -64,7 +75,7 @@ dev_loader = DataLoader(
     dev_data,
     batch_size=dev_cfg["batch_size"],
     shuffle=True,
-    collate_fn=collate_fn
+    collate_fn=easy_collate
 )
 
 logging_step = train_cfg["logging_step"]
@@ -96,9 +107,9 @@ for epoch in range(train_cfg["epochs"]):
                 model.eval()
                 with torch.no_grad():
                     for input_ids, attention_mask, labels in dev_loader:
-                        input_ids = input_ids.to(device)
-                        attention_mask = attention_mask.to(device)
-                        labels = labels.to(device)
+                        input_ids = torch.tensor(input_ids,dtype=torch.long).to(device)
+                        attention_mask = torch.tensor(attention_mask,dtype=torch.long).to(device)
+                        labels = torch.tensor(labels,dtype=torch.long).to(device)
                         outputs = model(input_ids, attention_mask=attention_mask,
                                         labels=labels, return_dict=True)
                         loss = outputs.loss
@@ -113,7 +124,7 @@ for epoch in range(train_cfg["epochs"]):
             tl.set_postfix(loss=loss.cpu().item(),
                            avg_loss=total_loss/step_now,
                            dev_loss=dev_loss/len(dev_loader),
-                           dev_acc=dev_acc/len(dev_loader))
+                           dev_acc=dev_acc/len(dev_loader.input_ids))
            
     # Save model
     if not os.path.isdir(train_cfg["output_dir"]):

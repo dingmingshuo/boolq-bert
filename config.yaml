@@ -4,7 +4,7 @@ preprocess:
   max_sent_len: 512
 
 data:
-  data_path: F:\boolq\data
+  data_path: /mnt/boolq
   train_data: train.jsonl
   dev_data: dev.jsonl
   test_data: test.jsonl
@@ -20,8 +20,8 @@ train:
   output_dir: ./result
   output_filename_prefix: bert-base-uncased
   logging_step: 200
-  batch_size: 12
-  epochs: 10
+  batch_size: 8
+  epochs: 40
   lr: 0.00003
   weight_decay: 0.01
   b: 0.3
