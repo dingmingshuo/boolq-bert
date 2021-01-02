@@ -27,11 +27,11 @@ class EpisodicMemory(object):
             np.asarray(list(self.memory.keys())), dtype=np.float32).reshape(total_keys, WORD_NUM)
         print("memory updated successfully. keys size:", self.all_keys.shape)
 
-    def get_keys(self, indexList):
+    def get_keys(self, inputList):
         keys = []
-        for ids in indexList:
+        for input_ids in inputList:
             key = np.zeros(WORD_NUM, dtype = np.float32)
-            for num in ids:
+            for num in input_ids:
                 key[num] += 1.0
             keys.append(key)
         return np.array(keys)
@@ -72,14 +72,11 @@ class EpisodicMemory(object):
         labels = []
         # Iterate over experiences
         for content, attn_mask, label in sample:
-            # convert the batch elements into torch.LongTensor
             contents.append(content)
             attn_masks.append(attn_mask)
             labels.append(label)
 
-        return (torch.tensor(contents, dtype = torch.long), 
-                torch.tensor(attn_masks, dtype = torch.long), 
-                torch.tensor(labels, dtype = torch.long))
+        return (np.array(contents), np.array(attn_masks), np.array(labels))
 
     def get_neighbours(self, keys, k=32):
         """

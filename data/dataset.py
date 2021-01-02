@@ -14,9 +14,9 @@ class BoolQDataset(Dataset):
         self.answers = answers
 
     def __getitem__(self, index):
-        ids = torch.tensor(self.input_ids[index], dtype=torch.long)
-        mask = torch.tensor(self.attention_masks[index], dtype=torch.long)
-        answer = torch.tensor(self.answers[index], dtype=torch.long)
+        ids = self.input_ids[index]
+        mask = self.attention_masks[index]
+        answer = self.answers[index]
         return ids, mask, answer
 
     def __len__(self):
@@ -36,7 +36,7 @@ def encode_data(tokenizer, questions, passages, max_length):
         input_ids.append(encoded_pair)
         attention_masks.append(attention_mask)
 
-    return np.array(input_ids), np.array(attention_masks)
+    return input_ids, attention_masks
 
 
 def get_train_data(data_path, train_data_file, tokenizer, max_seq_length):

@@ -3,6 +3,7 @@ from data import get_dev_data, get_train_data
 from model.model import get_model
 from model.optimizer import get_AdamW
 from model.memory import EpisodicMemory
+from data.dataset import BoolQDataset
 
 import os
 import copy
@@ -54,29 +55,37 @@ prob = np.array([])
 
 for input_ids, attention_mask, labels in tqdm(eval_loader):
 
-    input_ids = input_ids.to(device)
-    attention_mask = attention_mask.to(device)
-    labels = labels.to(device)
-    
-	# get current piece of data and its k nearest neighbours
-	# only one piece of data in a batch
+    # only one piece of data in a batch
+    input_ids = torch.tensor([input_ids], dtype=torch.long).to(device)
+    attention_mask = torch.tensor([attention_mask], dtype=torch.long).to(device)
+    labels = torch.tensor([labels], dtype=torch.long).to(device)
+
+    # get current piece of data and its k nearest neighbours
     keys = e_memory.get_keys(input_ids.cpu().numpy())
     neighbour = e_memory.get_neighbours(keys, k = eval_cfg['k_neighbours'])[0]
+
+    mem_data = BoolQDataset(neighbour[0], neighbour[1], neighbour[2])
+    mem_loader = DataLoader(
+         mem_data,
+         batch_size=eval_cfg['batch_size'],
+         shuffle = False
+     )
 
     # copy a model, set optimizer
     infer_model = copy.deepcopy(model)
     infer_model.train()
-    optimizer = get_AdamW(infer_model, train_cfg["lr"], train_cfg["weight_decay"])
+    optimizer = get_AdamW(infer_model, eval_cfg["lr"])
 
     # finetune the model on the k nearest neighbours
-    mem_input = neighbour[0].to(device)
-    mem_attnmask = neighbour[1].to(device)
-    mem_label = neighbour[2].to(device)
-    train_outputs = model(mem_input, attention_mask=mem_attnmask,
-                    labels=mem_label, return_dict=True)
-    loss = (train_outputs.loss - b).abs() + b
-    loss.backward()
-    optimizer.step()
+    for mem_ids, mem_attnmasks, mem_labels in mem_loader:
+        mem_ids = mem_ids.to(device)
+        mem_attnmasks = mem_attnmasks.to(device)
+        mem_labels = mem_labels.to(device)
+        train_outputs = model(mem_ids, attention_mask=mem_attnmasks,
+                        labels=mem_labels, return_dict=True)
+        loss = (train_outputs.loss - b).abs() + b
+        loss.backward()
+        optimizer.step()
 
     # do inference on current piece of data
     infer_model.eval()
@@ -88,6 +97,7 @@ for input_ids, attention_mask, labels in tqdm(eval_loader):
         pred = np.concatenate((pred, now_pred.cpu().numpy()), axis=0)
         answer = np.concatenate((answer, labels.cpu().numpy()), axis=0)
         prob = np.concatenate((prob, results.cpu().numpy()[:,1]), axis=0)
+    del infer_model
 
 # Calculate metric scores
 accuracy = accuracy_score(answer, pred)
