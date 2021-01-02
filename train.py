@@ -11,7 +11,7 @@ from torch.nn.functional import softmax
 from transformers import AutoTokenizer
 from tqdm import tqdm
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 config = yaml_load("./config.yaml")
 model_name = config.get("model")
@@ -87,8 +87,8 @@ for epoch in range(train_cfg["epochs"]):
             # Load loggings
             tl.set_postfix(loss=loss.cpu().item(),
                            avg_loss=total_loss/step_now,
-                           dev_loss=dev_loss/len(dev_loader),
-                           dev_acc=dev_acc/len(dev_loader))
+                           dev_loss=dev_loss/len(dev_data.input_ids),
+                           dev_acc=dev_acc/len(dev_data.input_ids))
            
     # Save model
     if not os.path.isdir(train_cfg["output_dir"]):
