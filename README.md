@@ -1,7 +1,10 @@
 # boolq-bert
 Finetune a BERT on google's dataset BoolQ: https://github.com/google-research-datasets/boolean-questions
 
-Some of the codes infers from https://medium.com/illuin/deep-learning-has-almost-all-the-answers-yes-no-question-answering-with-transformers-223bebb70189.
+Some of the codes infers from:
+
+- https://medium.com/illuin/deep-learning-has-almost-all-the-answers-yes-no-question-answering-with-transformers-223bebb70189.
+- https://github.com/h3lio5/episodic-lifelong-learning.
 
 ## Environment
 

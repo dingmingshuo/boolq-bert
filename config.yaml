@@ -26,3 +26,5 @@ eval:
   model_path: ./result/bert-base-uncased_epoch=10
   result_dir: ./result
   result_filename: result.txt
+  k_neighbours: 32
+  sample_rate: 0.1
