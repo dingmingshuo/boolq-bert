@@ -1,5 +1,5 @@
 from utils import yaml_load
-from data import get_train_data, get_dev_data
+from data import get_train_data, get_dev_data,eda
 from model.model import get_model
 from model.optimizer import get_AdamW
 
@@ -19,6 +19,7 @@ preprocess_cfg = config.get("preprocess", {})
 data_cfg = config.get("data", {})
 dev_cfg = config.get("dev", {})
 train_cfg = config.get("train", {})
+eda_cfg = config.get("eda",{})
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 train_data = get_train_data(
@@ -30,16 +31,40 @@ model = get_model(model_name).to(device)
 model.train()
 optimizer = get_AdamW(model, train_cfg["lr"], train_cfg["weight_decay"])
 
+def collate_fn(data):
+    inputs_ids = []
+    masks = []
+    answers = []
+    for (ids, mask, answer) in data:
+        words = tokenizer.convert_ids_to_tokens(ids)
+        words_da,mask_da = eda(preprocess_cfg['max_sent_len'],words,mask,
+                                sr_rate=eda_cfg['sr_rate'],
+                                rd_rate=eda_cfg['rd_rate'],
+                                sw_rate=eda_cfg['sw_rate'],
+                                ri_rate=eda_cfg['ri_rate']
+                                )
+        for tokens in words_da:
+            inputs_ids.append(tokenizer.convert_tokens_to_ids(tokens))
+        masks.extend(mask_da)
+        answers.extend([answer for i in range(len(words_da))])
+    
+    inputs_ids = torch.tensor(input_ids,dtype=torch.long)
+    masks = torch.tensor(masks,dtype=torch.long)
+    answers = torch.tensor(answers,dtype=torch.long)
+    
+    return inputs_ids,masks,answers
 
 train_loader = DataLoader(
     train_data,
     batch_size=train_cfg["batch_size"],
-    shuffle=True
+    shuffle=True,
+    collate_fn=collate_fn
 )
 dev_loader = DataLoader(
     dev_data,
     batch_size=dev_cfg["batch_size"],
-    shuffle=True
+    shuffle=True,
+    collate_fn=collate_fn
 )
 
 logging_step = train_cfg["logging_step"]
