@@ -17,8 +17,11 @@ from transformers import AutoTokenizer
 from sklearn.metrics import recall_score, accuracy_score, precision_score, f1_score, roc_auc_score
 
 from tqdm import tqdm
+import faulthandler
+# 在import之后直接添加以下启用代码即可
+faulthandler.enable()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 config = yaml_load("./config.yaml")
 model_name = config.get("model")
@@ -43,8 +46,8 @@ eval_loader = DataLoader(
 e_memory = EpisodicMemory()
 e_memory.build(train_data, rate = eval_cfg['sample_rate'])
 
-model = get_model(model_name).to(device)
-checkpoint = torch.load(eval_cfg['model_path'], map_location=device)
+model = get_model(model_name)
+checkpoint = torch.load(eval_cfg['model_path'], map_location=torch.device("cpu"))
 model.load_state_dict(checkpoint)
 model.eval()
 
@@ -73,17 +76,19 @@ for input_ids, attention_mask, labels in tqdm(eval_loader):
 
     # copy a model, set optimizer
     infer_model = copy.deepcopy(model)
+    infer_model = infer_model.to(device)
     infer_model.train()
     optimizer = get_AdamW(infer_model, eval_cfg["lr"])
 
     # finetune the model on the k nearest neighbours
     for mem_ids, mem_attnmasks, mem_labels in mem_loader:
+        optimizer.zero_grad()
         mem_ids = mem_ids.to(device)
         mem_attnmasks = mem_attnmasks.to(device)
         mem_labels = mem_labels.to(device)
-        train_outputs = model(mem_ids, attention_mask=mem_attnmasks,
+        train_outputs = infer_model(mem_ids, attention_mask=mem_attnmasks,
                         labels=mem_labels, return_dict=True)
-        loss = (train_outputs.loss - b).abs() + b
+        loss = train_outputs.loss
         loss.backward()
         optimizer.step()
 
@@ -97,7 +102,6 @@ for input_ids, attention_mask, labels in tqdm(eval_loader):
         pred = np.concatenate((pred, now_pred.cpu().numpy()), axis=0)
         answer = np.concatenate((answer, labels.cpu().numpy()), axis=0)
         prob = np.concatenate((prob, results.cpu().numpy()[:,1]), axis=0)
-    del infer_model
 
 # Calculate metric scores
 accuracy = accuracy_score(answer, pred)
