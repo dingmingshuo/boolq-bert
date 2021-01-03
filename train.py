@@ -87,7 +87,7 @@ for epoch in range(train_cfg["epochs"]):
             # Load loggings
             tl.set_postfix(loss=loss.cpu().item(),
                            avg_loss=total_loss/step_now,
-                           dev_loss=dev_loss/len(dev_data.input_ids),
+                           dev_loss=dev_loss/len(dev_loader),
                            dev_acc=dev_acc/len(dev_data.input_ids))
            
     # Save model
